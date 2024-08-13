@@ -53,26 +53,30 @@ class PoseDetector():
     
 class HandDetector():
     def __init__(self):
-        self.first_enter = True
-        self.start_time = 0.0
-        self.durations = 0.0
-        self.timer = 0.0
+        self.timer = HandTimer()
 
     def detect_hand_inside_body(self, image, bodyPolygon, rightHand, leftHand):
         height, width = image.shape[:2]
         x = int(width * 0.01)
         y = int(height * 0.2)
-        
-        cv2.putText(image, f"TIMER: {self.timer:.2f} s", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 3.0, (255, 0, 0), 2, cv2.LINE_AA)
 
         xLeft, yLeft = leftHand
         xRight, yRight = rightHand
         is_right_inside = ray_casting(bodyPolygon, xRight, yRight)
         is_left_inside = ray_casting(bodyPolygon, xLeft, yLeft)
         
-        self.hand_timer(image, is_right_inside, is_left_inside)
+        body_time = self.timer.body_timer(image, is_right_inside, is_left_inside)
 
-    def hand_timer(self, image, is_right_inside, is_left_inside):
+        cv2.putText(image, f"TIMER: {body_time:.2f} s", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 3.0, (255, 0, 0), 2, cv2.LINE_AA)
+
+class HandTimer():
+    def __init__(self):
+        self.first_enter = True
+        self.start_time = 0.0
+        self.durations = 0.0
+        self.timer = 0.0
+
+    def body_timer(self, image, is_right_inside, is_left_inside):
         if is_left_inside and is_right_inside:
             cv2.circle(image, (image.shape[1] - 30, 30), 30, (0, 0, 255), cv2.FILLED)
 
@@ -84,10 +88,11 @@ class HandDetector():
                 self.durations = current_time - self.enter_time
                 self.timer += self.durations
                 self.enter_time = current_time
-
         else:
             if not self.first_enter:
                 self.first_enter = True
                 self.durations = 0.0
+        
+        return self.timer
             
 
