@@ -70,10 +70,13 @@ class HandDetector():
         cv2.putText(image, f"TIMER: {body_time:.2f} s", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 3.0, (255, 0, 0), 2, cv2.LINE_AA)
 
 class HandTimer():
-    def __init__(self):
+    def __init__(self,
+                 hand_detection_threshold=5.0):
+        self.threshold = hand_detection_threshold
         self.first_enter = True
         self.start_time = 0.0
         self.durations = 0.0
+        self.inside_timer = 0.0
         self.timer = 0.0
 
     def body_timer(self, image, is_right_inside, is_left_inside):
@@ -86,12 +89,16 @@ class HandTimer():
             else:
                 current_time = time.perf_counter()
                 self.durations = current_time - self.enter_time
-                self.timer += self.durations
+                if self.inside_timer < self.threshold:
+                    self.inside_timer += self.durations
+                else:
+                    self.timer += self.durations
                 self.enter_time = current_time
         else:
             if not self.first_enter:
                 self.first_enter = True
                 self.durations = 0.0
+                self.inside_timer = 0.0
         
         return self.timer
             
