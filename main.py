@@ -24,7 +24,8 @@ def main():
             body = helper_functions.get_body_connections_points(lmList)
             rightHand = (lmList[16][1], lmList[16][2])
             leftHand = (lmList[15][1], lmList[15][2])
-            hand.detect_hand_inside_body(image, body, rightHand, leftHand)
+            if key_listener.space_pressed:
+                hand.detect_hand_inside_body(image, body, rightHand, leftHand)
 
         cv2.imshow("image", image)
         cv2.waitKey(1)
