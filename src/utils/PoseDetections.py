@@ -37,7 +37,13 @@ class PoseDetector():
             
         return image
     
-    def getBodyAndHandPoints(self, image, draw = True):
+    def getBodyPoints(self,
+                    image, 
+                    draw=True,
+                    return_all=False,
+                    return_body=False,
+                    return_righthand=False,
+                    return_lefthand=False):
         # return list of body point, left hand coordinate and right hand coordinate
         lmList = []
         if self.results.pose_landmarks:
