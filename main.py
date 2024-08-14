@@ -19,11 +19,9 @@ def main():
             break
         
         image = detector.detectPose(image, handBodyOnly=True)
-        lmList = detector.getPositions(image)
+        lmList, leftHand, rightHand = detector.getBodyAndHandPoints(image)
         if lmList:
             body = helper_functions.get_body_connections_points(lmList)
-            rightHand = (lmList[16][1], lmList[16][2])
-            leftHand = (lmList[15][1], lmList[15][2])
             if key_listener.space_pressed:
                 hand.detect_hand_inside_body(image, body, rightHand, leftHand)
 
