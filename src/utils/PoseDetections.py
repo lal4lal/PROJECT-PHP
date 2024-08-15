@@ -73,7 +73,7 @@ class HandDetector():
 
 class HandTimer():
     def __init__(self,
-                 hand_detection_threshold=5.0):
+                 hand_detection_threshold=3.0):
         self.threshold = hand_detection_threshold
         self.first_enter = True
         self.start_time = 0.0
