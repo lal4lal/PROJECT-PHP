@@ -25,7 +25,6 @@ def main():
             if key_listener.space_pressed:
                 leftHand = detector.getBodyPoints(image, return_pointNumber=15)
                 rightHand = detector.getBodyPoints(image, return_pointNumber=16)
-                print(leftHand)
                 hand.detect_hand_inside_body(image, body, rightHand, leftHand)
 
         cv2.imshow("image", image)
