@@ -19,7 +19,7 @@ def main():
             break
         
         image = detector.detectPose(image, handBodyOnly=True)
-        lmList, leftHand, rightHand = detector.getBodyPoints(image)
+        lmList, leftHand, rightHand = detector.getBodyPoints(image, return_all=True, return_lefthand=True, return_righthand=True)
         if lmList:
             body = helper_functions.get_body_connections_points(lmList)
             if key_listener.space_pressed:

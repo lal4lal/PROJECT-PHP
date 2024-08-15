@@ -39,11 +39,9 @@ class PoseDetector():
     
     def getBodyPoints(self,
                     image, 
-                    draw=True,
                     return_all=False,
-                    return_body=False,
-                    return_righthand=False,
-                    return_lefthand=False):
+                    return_lefthand=False,
+                    return_righthand=False):
         # return list of body point, left hand coordinate and right hand coordinate
         lmList = []
         if self.results.pose_landmarks:
@@ -51,11 +49,15 @@ class PoseDetector():
                 h, w, _ = image.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
                 lmList.append((id, cx, cy))
-            if draw:
-                cv2.circle(image, (lmList[15][1], lmList[15][2]), 3, (207,255,4), cv2.FILLED)
-                cv2.circle(image, (lmList[16][1], lmList[16][2]), 3, (207,255,4), cv2.FILLED)
-        
-        return lmList, (lmList[15][1], lmList[15][2]), (lmList[16][1], lmList[16][2])
+        result = []
+        if return_all:
+            result.append(lmList)
+        if return_righthand:
+            result.append((lmList[16][1], lmList[16][2]))
+        if return_lefthand:
+            result.append((lmList[15][1], lmList[15][2]))
+
+        return tuple(result) if len(result) > 1 else result[0]
     
 class HandDetector():
     def __init__(self):
