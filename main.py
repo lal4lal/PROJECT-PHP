@@ -19,10 +19,13 @@ def main():
             break
         
         image = detector.detectPose(image, handBodyOnly=True)
-        lmList, leftHand, rightHand = detector.getBodyPoints(image, return_all=True, return_lefthand=True, return_righthand=True)
+        lmList = detector.getBodyPoints(image)
         if lmList:
             body = helper_functions.get_body_connections_points(lmList)
             if key_listener.space_pressed:
+                leftHand = detector.getBodyPoints(image, return_pointNumber=15)
+                rightHand = detector.getBodyPoints(image, return_pointNumber=16)
+                print(leftHand)
                 hand.detect_hand_inside_body(image, body, rightHand, leftHand)
 
         cv2.imshow("image", image)
