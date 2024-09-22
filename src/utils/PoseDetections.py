@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import time
-from .handBody_connections import *
+from .body_points import *
 from .helper_functions import *
 
 class PoseDetector():
@@ -39,69 +39,122 @@ class PoseDetector():
     
     def getBodyPoints(self, image):
         # return list of body point, left hand coordinate and right hand coordinate
-        lmList = []
+        bodypoint = {}
         if self.results.pose_landmarks:
             for id, lm in enumerate(self.results.pose_landmarks.landmark):
                 h, w, _ = image.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
-                lmList.append((id, cx, cy))
+                bodypoint.update({id: (cx, cy)})
 
-        return lmList
-        
-    def getSpesificPoints(self, lmList, return_pointNumber):
-        if return_pointNumber > 0 and return_pointNumber <= 32:
-            if len(lmList) > return_pointNumber:
-                return tuple((lmList[return_pointNumber][1], lmList[return_pointNumber][2]))
+        return bodypoint
     
 class HandDetector():
     def __init__(self):
-        self.timer = HandTimer()
+        self.timer = Timer()
+        self.wrist_left = None
+        self.wrist_right = None
 
     def detect_hand_inside_body(self, image, bodyPolygon, rightHand, leftHand):
         height, width = image.shape[:2]
         x = int(width * 0.01)
-        y = int(height * 0.2)
+        y = int(height * 0.05)
 
         xLeft, yLeft = leftHand
         xRight, yRight = rightHand
         is_right_inside = ray_casting(bodyPolygon, xRight, yRight)
         is_left_inside = ray_casting(bodyPolygon, xLeft, yLeft)
         
-        body_time = self.timer.body_timer(image, is_right_inside, is_left_inside)
+        inside_time = self.timer.hand_timer(image, is_right_inside, is_left_inside)
 
-        cv2.putText(image, f"TIMER: {body_time:.2f} s", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 3.0, (255, 0, 0), 2, cv2.LINE_AA)
+        cv2.putText(image, f"INSIDE TIMER: {inside_time:.2f} s", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
 
-class HandTimer():
+    def _calculate_movement(self, previous, current):
+        return ((previous[0] - current[0]) ** 2 + (previous[1] - current[1]) ** 2) ** 0.5
+
+    def detect_hand_idle(self, image, wrist):
+        height, width = image.shape[:2]
+        x = int(width * 0.01)
+        y = int(height * 0.1)
+
+        left, right = wrist
+        if self.wrist_left is None or self.wrist_right is None:
+            self.wrist_left = left
+            self.wrist_right = right
+            return
+        
+        left_wrist_movement = self._calculate_movement(self.wrist_left, left)
+        right_wrist_movement = self._calculate_movement(self.wrist_right, right)
+
+        left_wrist_idle = True if left_wrist_movement < 5 else False
+        right_wrist_idle = True if right_wrist_movement < 5 else False
+
+        idle_time = self.timer.idling_timer(image, left_wrist_idle, right_wrist_idle)
+        self.wrist_left = left
+        self.wrist_right = right
+
+        cv2.putText(image, f'IDLE TIMER: {idle_time:.2f} s', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 2, cv2.LINE_AA)
+            
+class Timer():
     def __init__(self,
-                 hand_detection_threshold=3.0):
-        self.threshold = hand_detection_threshold
-        self.first_enter = True
-        self.start_time = 0.0
-        self.durations = 0.0
+                 detection_threshold=3.0):
+        self.threshold = detection_threshold
+        self.first_inside = True
+        self.start_inside = 0.0
+        self.durations_inside = 0.0
         self.inside_timer = 0.0
-        self.timer = 0.0
+        self.timerInside = 0.0
 
-    def body_timer(self, image, is_right_inside, is_left_inside):
+        self.first_idle = True
+        self.start_idle = 0.0
+        self.durations_idle = 0.0
+        self.idle_timer = 0.0
+        self.timerIdle = 0.0
+
+    def hand_timer(self, image, is_right_inside, is_left_inside):
         if is_left_inside and is_right_inside:
-            cv2.circle(image, (image.shape[1] - 30, 30), 30, (0, 0, 255), cv2.FILLED)
 
-            if self.first_enter:
-                self.first_enter = False
-                self.enter_time = time.perf_counter()
+            if self.first_inside:
+                self.first_inside = False
+                self.start_inside = time.perf_counter()
             else:
                 current_time = time.perf_counter()
-                self.durations = current_time - self.enter_time
+                self.durations_inside = current_time - self.start_inside
                 if self.inside_timer < self.threshold:
-                    self.inside_timer += self.durations
+                    self.inside_timer += self.durations_inside
                 else:
-                    self.timer += self.durations
-                self.enter_time = current_time
+                    cv2.circle(image, (image.shape[1] - 30, 30), 30, (0, 0, 255), cv2.FILLED)
+                    self.timerInside += self.durations_inside
+                self.start_inside = current_time
         else:
-            if not self.first_enter:
-                self.first_enter = True
-                self.durations = 0.0
+            if not self.first_inside:
+                self.first_inside = True
+                self.durations_inside = 0.0
                 self.inside_timer = 0.0
         
-        return self.timer
+        return self.timerInside
+    
+    def idling_timer(self, image, left_wrist_idle, right_wrist_idle):
+        if left_wrist_idle and right_wrist_idle:
+
+            if self.first_idle:
+                self.first_idle = False
+                self.start_idle = time.perf_counter()
+            else:
+                current_time = time.perf_counter()
+                self.durations_idle = current_time - self.start_idle
+                if self.idle_timer < self.threshold:
+                    self.idle_timer += self.durations_idle
+                else:
+                    cv2.circle(image, (image.shape[1] - 90, 30), 30, (255, 0, 0), cv2.FILLED)
+                    self.timerIdle += self.durations_idle
+                self.start_idle = current_time
+        else:
+            if not self.first_idle:
+                self.first_idle = True
+                self.durations_idle = 0.0
+                self.idle_timer = 0.0
+        
+        return self.timerIdle
+
             
 

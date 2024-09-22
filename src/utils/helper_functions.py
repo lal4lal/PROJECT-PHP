@@ -1,4 +1,4 @@
-from .handBody_connections import *
+from .body_points import *
 
 def ray_casting(edges, xp, yp):
     count = 0
@@ -9,10 +9,10 @@ def ray_casting(edges, xp, yp):
     
     return count%2 == 1
 
-def get_body_connections_points(lmList):
+def get_body_connections_points(bodypoint):
         body_connections_points = ()
         for lines in BODY_CONNECTIONS:
             i, j = lines
-            body_connections_points += (((lmList[i][1], lmList[i][2]), (lmList[j][1], lmList[j][2])), )
+            body_connections_points += ((bodypoint.get(i), bodypoint.get(j)), )
 
         return body_connections_points

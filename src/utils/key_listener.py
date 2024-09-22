@@ -1,7 +1,7 @@
 from pynput import keyboard
 
 esc_pressed = False
-space_pressed = False
+enter_pressed = False
 
 def start_listener():
     listener = keyboard.Listener(on_press=on_press)
@@ -16,6 +16,6 @@ def on_press(key):
     if k == 'esc':
         global esc_pressed
         esc_pressed = True
-    elif k == 'space':
-        global space_pressed
-        space_pressed = True
+    elif k == 'enter':
+        global enter_pressed
+        enter_pressed = True

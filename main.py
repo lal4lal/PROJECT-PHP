@@ -1,9 +1,10 @@
 import cv2
 from src.utils import key_listener, PoseDetections, helper_functions
+from src.utils.body_points import *
 
 
 def main():
-    # cap = cv2.VideoCapture("./Presentations/3.mp4")
+    # cap = cv2.VideoCapture("./Presentations/1.mp4")
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Could not open video file.")
@@ -19,14 +20,16 @@ def main():
             break
         
         image = detector.detectPose(image, handBodyOnly=True)
-        lmList = detector.getBodyPoints(image)
-        if lmList:
-            body = helper_functions.get_body_connections_points(lmList)
-            if key_listener.space_pressed:
-                leftHand = detector.getSpesificPoints(lmList, return_pointNumber=15)
-                rightHand = detector.getSpesificPoints(lmList, return_pointNumber=16)
-                if leftHand and rightHand:
-                    hand.detect_hand_inside_body(image, body, rightHand, leftHand)
+        bodypoint = detector.getBodyPoints(image)
+        if bodypoint:
+            body = helper_functions.get_body_connections_points(bodypoint)
+            if key_listener.enter_pressed:
+                wrist = (bodypoint.get(LEFT_WRIST), bodypoint.get(RIGHT_WRIST))
+
+                if bodypoint[LEFT_WRIST] and bodypoint[RIGHT_WRIST]:
+                    hand.detect_hand_inside_body(image, body, bodypoint[RIGHT_WRIST], bodypoint[LEFT_WRIST])
+                    hand.detect_hand_idle(image, wrist)
+                
 
         cv2.imshow("image", image)
         cv2.waitKey(1)
